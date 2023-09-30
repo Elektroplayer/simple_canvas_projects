@@ -1,5 +1,6 @@
 let elm = document.getElementById("canvas");
 let ctx = elm.getContext("2d");
+let scoreElm = document.getElementById("score");
 
 function fillBlackScreen() {
     ctx.fillStyle = "black";
@@ -87,7 +88,11 @@ function game() {
     if(!collision) {
         move(!eating);
 
-        if(eating) food = genFood();
+        if(eating) {
+            scoreElm.innerHTML = +scoreElm.innerHTML + 1
+
+            food = genFood();
+        }
     }
 
     fillBlackScreen();
