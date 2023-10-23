@@ -3,12 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <title>Minesweeper</title>
+    <style>
+        @font-face {
+            font-family: 'Arcade';
+            src: url('./ARCADECLASSIC.TTF');
+        }
+    </style>
 </head>
 <body>
     <center>
-        <h1>Simple Minesweeper</h1>
-        <canvas id="canvas", width="500", height="500">Browser don't support canvas</canvas>
-        <!-- <p>Score: <b><span id="score">0</span></b></p> -->
+        <h1>Minesweeper</h1>
+        <canvas id="canvas">Browser don't support canvas</canvas>
+        <p>Mines: <b><span id="openedMines">0</span> / <span id="allMines">0</span></b></p>
     </center>
     <script src="script.js"></script>
 </body>

@@ -1,18 +1,27 @@
 let elm = document.getElementById("canvas");
 let ctx = elm.getContext("2d");
 
-ctx.font = "30px Comic Sans MS";
-ctx.textAlign = "center";
+let minesElm = document.getElementById("openedMines");
+let allMinesElm = document.getElementById("allMines");
+
+ctx.font = "Arcade";
 
 const GAME_TYPES = {
     easy: {
         wCellsCount: 10,
         hCellsCount: 10,
-        minesCount:10
+        minesCount: 20
+    },
+    medium: {
+        wCellsCount: 20,
+        hCellsCount: 50,
+        minesCount: 50
     }
 }
 
-let gameType = GAME_TYPES.easy, game;
+let gameType = GAME_TYPES.easy;
+
+allMinesElm.innerHTML = gameType.minesCount;
 
 const COLORS = {
     background: "black",
@@ -20,59 +29,126 @@ const COLORS = {
     cell_default_background: "aqua",
     cell_mine_background: "red",
     cell_clicked_background: "grey",
+    cell_win_background: "green",
     
     icons: "black"
 }
 
-const ICONS = {
-    flag (x,y) {
-        let w = elm.clientWidth / gameType.wCellsCount;
-        let h = elm.clientHeight / gameType.hCellsCount;
-        
+class IconGenerator {
+    constructor(x, y, a) {
+        this.x = x;
+        this.y = y;
+        this.a = a;
+    }
+
+    moveTo(x,y) {
+        return ctx.moveTo(this.a*this.x + this.a*x, this.a*this.y + this.a*y)
+    }
+
+    moveTo16(x,y) {
+        return ctx.moveTo(this.a*this.x + this.a/16*x, this.a*this.y + this.a/16*y);
+    }
+
+    lineTo(x,y) {
+        return ctx.lineTo(this.a*this.x + this.a*x, this.a*this.y + this.a*y);
+    }
+
+    fillRect(x,y,w,h) {
+        return ctx.fillRect(this.a*this.x + this.a*x, this.a*this.y + this.a*y, this.a*w, this.a*h);
+    }
+
+    fillRect16(x,y,w,h) {
+        return ctx.fillRect(this.a*this.x + this.a/16*x, this.a*this.y + this.a/16*y, this.a/16*w, this.a/16*h);
+    }
+
+    flag () {        
         ctx.fillStyle = COLORS.icons;
 
         ctx.beginPath();
-        ctx.moveTo(w*x + w*0.3, h*y + h*0.1);
-        ctx.lineTo(w*x + w*0.4, h*y + h*0.1);
-        ctx.lineTo(w*x + w*0.8, h*y + h*0.35);
-        ctx.lineTo(w*x + w*0.4, h*y + h*0.6);
-        ctx.lineTo(w*x + w*0.4, h*y + h*0.9);
-        ctx.lineTo(w*x + w*0.3, h*y + h*0.9);
-        ctx.lineTo(w*x + w*0.3, h*y + h*0.1);
+
+        this.fillRect16(4,12,8,1);
+        this.fillRect16(5,11,6,1.5);
+        this.fillRect16(7,3,1,9);
+
+        ctx.fillStyle = "#d60e06";
+
+        this.fillRect16(8,3,1,4);
+        this.fillRect16(8,4,2,1);
+        this.fillRect16(8,5,3,1.2);
+
         ctx.fill();
-    },
+    }
 
-    mine (x, y) {
-        let w = elm.clientWidth / gameType.wCellsCount;
-        let h = elm.clientHeight / gameType.hCellsCount;
-        
+    mine () {        
         ctx.fillStyle = COLORS.icons;
 
         ctx.beginPath();
-        ctx.arc(w*x+w/2, h*y+h/2, 0.3*h, 0, 2*Math.PI);
+        ctx.arc(this.a*this.x+this.a/2, this.a*this.y+this.a/2, 0.3*this.a, 0, 2*Math.PI);
 
         ctx.fill();
     }
 }
 
 class Cell {
-    flag = false;
-    activated = false;
-    active = true;
-    background = COLORS.cell_default_background;
-    icon = undefined;
-    nearCells = undefined;
-    mine = false;
+    flag        = false;
+    activated   = false;
+    active      = true;
+    background  = COLORS.cell_default_background;
+    icon        = undefined;
+    nearCells   = undefined;
+    mine        = false;
 
-    constructor(x, y) {
+    constructor(x, y, mine, grid) {
         this.x = x;
         this.y = y;
+        this.grid = grid;
+        this.mine = mine;
+
+        this.iconGenerator = new IconGenerator(x, y, grid.a);
 
         this.draw();
     }
-    
-    click() {
-        if(!this.active || this.flag) return;
+
+    draw() {
+        this.clear();
+
+        ctx.beginPath();
+
+        ctx.fillStyle = this.background;
+
+        ctx.roundRect(
+            this.grid.a*this.x+this.grid.a*0.065,
+            this.grid.a*this.y+this.grid.a*0.065,
+            this.grid.a*0.87,
+            this.grid.a*0.87,
+            this.grid.a/10
+        );
+
+        ctx.fill();
+
+        if(this.icon) {
+            if(this.iconGenerator[this.icon]) this.iconGenerator[this.icon]()
+            else {
+                ctx.font = this.grid.a + "px Arcade";
+                ctx.textAlign = "center";
+                ctx.fillStyle = COLORS.icons;
+                ctx.fillText(this.icon, this.grid.a*this.x+this.grid.a*0.5, this.grid.a*this.y+this.grid.a*0.8);
+            }
+        }
+    }
+
+    clear() {
+        ctx.fillStyle = COLORS.background;
+
+        ctx.fillRect(this.grid.a*this.x, this.grid.a*this.y, this.grid.a, this.grid.a);
+    }
+
+    checkWin() {
+        if(this.grid.fields.filter(elm => elm.mine == false).every(elm => elm.activated == true)) {
+            this.grid.fields.forEach(elm => {
+                elm.win()
+            })
+        }
     }
 
     rightClick() {
@@ -81,150 +157,141 @@ class Cell {
         this.icon = this.flag ? undefined : "flag";
         this.flag = !this.flag
 
+        minesElm.innerText = +minesElm.innerText + (this.flag ? 1 : -1)
+
         this.draw()
     }
 
-    hover(bool = true) {
-
-    }
-
-    clear() {
-        let w = elm.clientWidth / gameType.wCellsCount;
-        let h = elm.clientHeight / gameType.hCellsCount;
-        
-        ctx.fillStyle = COLORS.background;
-
-        ctx.fillRect(w*this.x, h*this.y, w, h);
-    }
-
-    draw() {
-        let w = elm.clientWidth / gameType.wCellsCount;
-        let h = elm.clientHeight / gameType.hCellsCount;
-    
-        this.clear()
-        ctx.beginPath();
-
-        ctx.fillStyle = this.background;
-
-        ctx.roundRect(
-            w*this.x+w*0.065,
-            h*this.y+h*0.065,
-            w * 0.87,
-            h * 0.87,
-            5
-        );
-
-        ctx.fill();
-
-        console.log(this.icon)
-
-        if(this.icon) {
-            if(ICONS[this.icon]) ICONS[this.icon](this.x, this.y)
-            else {
-                ctx.fillStyle = COLORS.icons;
-                ctx.fillText(this.icon, w*this.x+w*0.5, h*this.y+h*0.7,);
-            }
-        };
-    }
-}
-
-class FreeCell extends Cell {
     click() {
         if(!this.active || this.flag) return;
 
-        if(!this.nearCells) {
-            this.nearCells = [];
+        if(this.mine) {
+            this.active = false;
+            this.activated = true;
+            this.background = COLORS.cell_mine_background;
+            this.icon = "mine";
+            this.grid.gameState = "stoped";
 
-            for(let i = 0;i<game.field.length;i++) {
-                if( 
-                    [this.x - 1, this.x, this.x + 1].includes(game.field[i].x) &&
-                    [this.y - 1, this.y, this.y + 1].includes(game.field[i].y) &&
-                    !(game.field[i].x == this.x && game.field[i].y == this.y)
-                )
-                this.nearCells.push(game.field[i])
+            this.draw();
+
+            this.grid.fields.filter(elm => elm.mine && !elm.flag).forEach(elm => {
+                elm.background = COLORS.cell_mine_background;
+                elm.icon = "mine";
+                elm.draw();
+            })
+
+            this.grid.fields.filter(elm => elm.flag && !elm.mine).forEach(elm => {
+                elm.background = COLORS.cell_mine_background;
+                elm.draw();
+            })
+
+        } else {
+            if(!this.nearCells) {
+                this.nearCells = [];
+
+                for(let i = 0;i<this.grid.fields.length;i++) {
+                    if( 
+                        [this.x - 1, this.x, this.x + 1].includes(this.grid.fields[i].x) &&
+                        [this.y - 1, this.y, this.y + 1].includes(this.grid.fields[i].y) &&
+                        !(this.grid.fields[i].x == this.x && this.grid.fields[i].y == this.y)
+                    )
+                    this.nearCells.push(this.grid.fields[i])
+                }
+            }
+
+            let nearMinesCount = this.nearCells.reduce((acc, x) => acc + (x.mine ? 1 : 0), 0);
+
+            if(this.activated) {
+                let nearFlagedCellsCount = this.nearCells.reduce((acc, x) => acc + x.flag ? 1 : 0, 0);
+
+                if(nearMinesCount == nearFlagedCellsCount) {
+                    this.nearCells.filter(elm => !(elm.flag || elm.activated)).forEach(elm => elm.click())
+                    this.active = false;
+                }
+
+                return;
+            } else {
+                this.activated = true;
+                this.background = COLORS.cell_clicked_background;
+
+                if(nearMinesCount != 0) this.icon = nearMinesCount;
+                else {
+                    this.nearCells.forEach(elm => elm.click());
+                }
+
+                this.draw()
             }
         }
 
-        let nearMinesCount = this.nearCells.reduce((acc, x) => acc + (x.mine ? 1 : 0), 0);
-
-        if(this.activated) {
-            let nearFlagedMinesCount = this.nearCells.reduce((acc, x) => acc + (x.mine && (x.flag || !x.active || x.activated) ? 1 : 0), 0);
-
-            if(nearMinesCount == nearFlagedMinesCount) {
-                this.nearCells.filter(elm => !(elm.flag || elm.activated)).forEach(elm => elm.click())
-                this.active = false;
-            }
-
-            return;
-        } else {
-            this.activated = true;
-            this.background = COLORS.cell_clicked_background;
-
-            if(nearMinesCount != 0) this.icon = nearMinesCount;
-            else {
-                this.nearCells.forEach(elm => elm.click());
-            }
-
-            this.draw()
-        };
-    }
-}
-
-class MineCell extends Cell {
-    mine = true;
-
-    constructor(x,y) {
-        super(x,y);
+        this.checkWin()
     }
 
-    click() {
-        // super.click();
-        if(!this.active || this.flag) return;
+    win() {
+        if(this.mine) {
+            this.flag = true;
+            this.icon = "flag"
+            this.background = COLORS.cell_win_background;
+        }
 
         this.active = false;
         this.activated = true;
-        this.background = COLORS.cell_mine_background;
-        this.icon = "mine";
 
-        this.draw();
+        this.draw()
     }
 }
 
-class Game {
-    field = [];
+class Grid {
+    fields = [];
+    gameState = "notStarted"; // started, stoped
 
-    constructor() {
-        this.fillBlackScreen();
+    constructor(w, h) {
+        let a;
+        if(Math.min(window.innerWidth, window.innerHeight) == window.innerWidth) a = window.innerWidth*.7/w;
+        else a = window.innerHeight*.7/h;
 
+        if(a*w>window.innerWidth) a = window.innerWidth*.7/w;
+        if(a*h>window.innerHeight*.8) a = window.innerHeight*.8/h;
+
+        this.w = w;
+        this.h = h;
+        this.a = a;
+
+        ctx.canvas.width = (w*a);
+        ctx.canvas.height = (h*a);
+
+        ctx.fillStyle = "black";
+        ctx.fillRect(0,0,(w*a),(h*a));
+
+        for(let x = 0;x < this.w; x++) for(let y = 0;y < this.h; y++) this.fields.push(new Cell(x,y, false ,this));
+    }
+
+    minesGen(startCell) {
         let mines = [], cell;
         for(let i = 0;i<gameType.minesCount;i++) {
             cell = [
-                Math.floor(Math.random()*gameType.wCellsCount),
-                Math.floor(Math.random()*gameType.hCellsCount)
+                Math.floor(Math.random()*this.w),
+                Math.floor(Math.random()*this.h)
             ]
 
-            if(!mines.some(elm => elm[0] == cell[0] && elm[1] == cell[1])) mines.push(cell);
+            if(!mines.some(
+                elm => (elm[0] == cell[0] && elm[1] == cell[1]) ||
+                (
+                    [startCell.x-1, startCell.x, startCell.x+1].includes(cell[0]) && 
+                    [startCell.y-1, startCell.y, startCell.y+1].includes(cell[1])
+                )
+            )) mines.push(cell);
             else i--
-        };
+        }
 
-        for(let x = 0; x<gameType.hCellsCount;x++) for(let y = 0; y<gameType.hCellsCount;y++) this.field.push(
-            mines.some(elm => elm[0] == x && elm[1] == y) ? new MineCell(x,y) : new FreeCell(x,y)
-        )
-
-
-    }
-
-    fillBlackScreen() {
-        ctx.fillStyle = "black";
-        ctx.fillRect(0,0,elm.clientWidth,elm.clientHeight);
-    }
+        mines.forEach(elm => this.getCell(elm[0], elm[1]).mine = true )
+5    }
 
     getCell(x,y) {
-        return this.field.find(elm => elm.x == x && elm.y == y);
+        return this.fields.find(elm => elm.x == x && elm.y == y);
     }
 }
 
-game = new Game();
+let grid = new Grid(gameType.wCellsCount, gameType.hCellsCount);
 
 // Транслятор преобразует координаты относительно страницы в положение клетки.
 function translator (ev) {
@@ -235,7 +302,7 @@ function translator (ev) {
         x: Math.floor((ev.pageX - elm.offsetLeft - elm.clientLeft)/w),
         y: Math.floor((ev.pageY - elm.offsetTop + elm.clientTop)/h)
     }
-};
+}
 
 let currentCell = null;
 
@@ -248,8 +315,15 @@ elm.addEventListener('mouseup', (ev) => {
 
     if(currentCell.x !== cell.x || currentCell.y !== cell.y) return currentCell = null;
 
-    if(ev.button == 0) game.getCell(cell.x, cell.y).click();
-    else if(ev.button = 2) game.getCell(cell.x, cell.y).rightClick();
+    if(grid.gameState == "notStarted") {
+        grid.minesGen(cell);
+        grid.gameState = "started";
+    } // = new Grid(gameType.wCellsCount, gameType.hCellsCount, cell);
+
+    if(grid.gameState == "stoped") return;
+
+    if(ev.button == 0) grid.getCell(cell.x, cell.y).click();
+    else if(ev.button == 2) grid.getCell(cell.x, cell.y).rightClick();
 });
 
 elm.addEventListener('contextmenu', (ev) => {
