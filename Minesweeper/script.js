@@ -202,7 +202,9 @@ class Cell {
             let nearMinesCount = this.nearCells.reduce((acc, x) => acc + (x.mine ? 1 : 0), 0);
 
             if(this.activated) {
-                let nearFlagedCellsCount = this.nearCells.reduce((acc, x) => acc + x.flag ? 1 : 0, 0);
+                let nearFlagedCellsCount = this.nearCells.reduce((acc, x) => {
+                    return acc + (x.flag ? 1 : 0)
+                }, 0);
 
                 if(nearMinesCount == nearFlagedCellsCount) {
                     this.nearCells.filter(elm => !(elm.flag || elm.activated)).forEach(elm => elm.click())
