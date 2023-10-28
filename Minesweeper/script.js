@@ -3,6 +3,8 @@ let ctx = elm.getContext("2d");
 
 let minesElm = document.getElementById("openedMines");
 let allMinesElm = document.getElementById("allMines");
+let retryButton = document.getElementById("retry");
+let gameTypesSelect = document.getElementById("gameTypes");
 
 ctx.font = "Arcade";
 
@@ -10,12 +12,17 @@ const GAME_TYPES = {
     easy: {
         wCellsCount: 10,
         hCellsCount: 10,
-        minesCount: 20
+        minesCount: 10
     },
     medium: {
         wCellsCount: 20,
-        hCellsCount: 50,
-        minesCount: 50
+        hCellsCount: 20,
+        minesCount: 75
+    },
+    hard: {
+        wCellsCount: 70,
+        hCellsCount: 30,
+        minesCount: 300
     }
 }
 
@@ -330,4 +337,21 @@ elm.addEventListener('mouseup', (ev) => {
 
 elm.addEventListener('contextmenu', (ev) => {
     ev.preventDefault();
+})
+
+retryButton.addEventListener('click', () => {
+    grid = new Grid(gameType.wCellsCount, gameType.hCellsCount);
+    
+    allMinesElm.innerHTML = gameType.minesCount;
+    minesElm.innerHTML = 0;
+});
+
+gameTypesSelect.addEventListener('change', (ev) => {
+    // console.log();
+    gameType = GAME_TYPES[ev.target.value];
+
+    grid = new Grid(gameType.wCellsCount, gameType.hCellsCount);
+    
+    allMinesElm.innerHTML = gameType.minesCount;
+    minesElm.innerHTML = 0;
 })

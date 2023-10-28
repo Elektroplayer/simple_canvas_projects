@@ -6,13 +6,28 @@
     <style>
         @font-face {
             font-family: 'Arcade';
-            src: url('./ARCADECLASSIC.TTF');
+            src: url('./ARCADECLASSIC.TTF') format('truetype');
+            font-style: normal;
+            font-weight: 400;
         }
     </style>
 </head>
 <body>
     <center>
         <h1>Minesweeper</h1>
+        <div>
+            <button id="retry">retry</button>
+            <select name="gameTypes" id="gameTypes">
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
+            </select>
+            <script>
+                document.getElementById("gameTypes").value = "easy";
+            </script>
+        </div>
+        <br>
+        
         <canvas id="canvas">Browser don't support canvas</canvas>
         <p>Mines: <b><span id="openedMines">0</span> / <span id="allMines">0</span></b></p>
     </center>
