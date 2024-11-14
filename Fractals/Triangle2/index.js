@@ -39,30 +39,36 @@ ctx.fillStyle = 'black';
 
 //  Создаём вечный интервал с повтором каждые 50мс
 setInterval( () => {
-    let tgl = triangles.shift(); // Выбираем треугольник и сразу убираем его из массива
+//setTimeout(function () {
+//    while(true) {
+        let tgl = triangles.shift(); // Выбираем треугольник и сразу убираем его из массива
 
-    //  Создаём его
-    createTriangle([
-        findCenter([ tgl[0], tgl[1] ]),
-        findCenter([ tgl[0], tgl[2] ]),
-        findCenter([ tgl[1], tgl[2] ])
-    ]);
-
-    //  В одном большом треугольнике получилось 3 поменьше. Засовываем их в массив в конец
-    triangles.push(
-        [
-            tgl[0],
+        //  Создаём его
+        createTriangle([
             findCenter([ tgl[0], tgl[1] ]),
-            findCenter([ tgl[0], tgl[2] ])
-        ],[
-            tgl[1],
-            findCenter([ tgl[1], tgl[0] ]),
+            findCenter([ tgl[0], tgl[2] ]),
             findCenter([ tgl[1], tgl[2] ])
-        ],[
-            tgl[2],
-            findCenter([ tgl[2], tgl[0] ]),
-            findCenter([ tgl[2], tgl[1] ])
-        ]
-    );
-    //  И повторяем пока не взорвётся комп)
-},10 );
+        ]);
+
+        //  В одном большом треугольнике получилось 3 поменьше. Засовываем их в массив в конец
+        triangles.push(
+            [
+                tgl[0],
+                findCenter([ tgl[0], tgl[1] ]),
+                findCenter([ tgl[0], tgl[2] ])
+            ],[
+                tgl[1],
+                findCenter([ tgl[1], tgl[0] ]),
+                findCenter([ tgl[1], tgl[2] ])
+            ],[
+                tgl[2],
+                findCenter([ tgl[2], tgl[0] ]),
+                findCenter([ tgl[2], tgl[1] ])
+            ]
+        );
+        
+//    }
+//},100)
+
+//  И повторяем пока не взорвётся комп)
+}, 1 );

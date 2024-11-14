@@ -54,19 +54,23 @@ function checkCollision() {
     return future.some(elm => elm[0] == head[0] && elm[1] == head[1]) || head[0] < 0 || head[0] > 19 || head[1] < 0 || head[1] > 19
 }
 
+let food = [];
+
 function genFood() {
     let freeSpace = [];
 
     for(let i = 0;i<20;i++) {
         for(let j = 0;j<20;j++) {
-            if(!tail.some(elm => elm[0] == i && elm[1] == j)) freeSpace.push([i,j]);
+            if(!tail.some(elm => elm[0] == i && elm[1] == j) && !food.some(elm => elm[0] == i && elm[1] == j)) freeSpace.push([i,j]);
         }
     }
 
-    return [freeSpace[Math.floor(Math.random() * freeSpace.length)]]
+    if(freeSpace.length == 0) return;
+
+    return freeSpace[Math.floor(Math.random() * freeSpace.length)]
 }
 
-let food = genFood();
+food = [genFood(), genFood(), genFood()];
 
 function checkFood() {
     let head = moves[direction]().pop();
@@ -78,7 +82,7 @@ fillBlackScreen();
 drawFood();
 drawSnake();
 
-let timeInterval = 200;
+let timeInterval = 300;
 let interval;
 
 function game() {
@@ -88,10 +92,15 @@ function game() {
     if(!collision) {
         move(!eating);
 
+        let head = tail[tail.length-1];
+
         if(eating) {
             scoreElm.innerHTML = +scoreElm.innerHTML + 1
 
-            food = genFood();
+            food = food.filter(elm => !(elm[0] == head[0] && elm[1] == head[1]))
+            food.push(genFood());
+
+            // food = [];
         }
     }
 
